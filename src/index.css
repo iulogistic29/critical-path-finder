@@ -11,3 +11,9 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.invalid-input {
+	color: red;
+	font-weight: normal;
+	font-style: italic;
+}
