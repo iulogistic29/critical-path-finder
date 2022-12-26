@@ -1,25 +1,19 @@
-import logo from './logo.svg';
-import './App.css';
+import { Container, Typography, Box } from '@mui/material';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+	return (
+		<Container>
+			<Box>
+				<Typography
+					fontWeight={700}
+					fontSize="30px"
+					lineHeight="35px"
+				>
+					CRITICAL PATH FINDER
+				</Typography>
+			</Box>
+		</Container>
+	);
 }
 
 export default App;
