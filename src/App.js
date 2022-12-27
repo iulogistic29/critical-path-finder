@@ -9,6 +9,7 @@ import {
 	Fab,
 	Button,
 } from '@mui/material';
+import moment from "moment"
 import SendIcon from '@mui/icons-material/Send';
 import AddIcon from '@mui/icons-material/Add';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -19,12 +20,14 @@ import { selectTasks, addTask } from "./redux/reducers/taskSlice"
 import iu_logo from "./images/logo_iu.svg"
 import logistic_logo from "./images/logistic_icon.svg"
 import TaskInput from "./components/TaskInput"
+import ScheduleTable from "./components/ScheduleTable"
 
 import { MyGraph } from "./utils"
 
 const options = {
 	autoResize: true,
 	layout: {
+		improvedLayout:true,
 		hierarchical: false,
 	},
 	edges: {
@@ -33,16 +36,15 @@ const options = {
 };
 
 const palettes = ["#7eb0d5", "#b2e061", "#bd7ebe", "#ffb55a", "#ffee65", "#beb9db", "#fdcce5", "#8bd3c7"]
-const criticalColor = "#fd7f6f"
-let colorIndex = 0
+const nodeColor = "#f7f7f7"
+const criticalColor = "#ffee65"
 
-const randomColor = () => {
-	colorIndex = (colorIndex + 1) % palettes.length
-	return palettes[colorIndex]
-}
 
 const App = () => {
 	const [startDate, setStartDate] = useState(new Date());
+	const [findPathStatus, setFindPathStatus] = useState(false);
+	const [errorMessage, setErrorMessage] = useState("");
+	const [schedule, setSchedule] = useState([]);
 	const [graph, setGraph] = useState({
 		nodes: [],
 		edges: [],
@@ -50,8 +52,6 @@ const App = () => {
 
 	const { tasks } = useSelector(selectTasks)
 	const dispatch = useDispatch()
-
-	console.log(tasks)
 
 	const handleAddTask = () => {
 		dispatch(addTask())
@@ -65,7 +65,7 @@ const App = () => {
 			nodes.push({
 				id: item.id,
 				label: item.name,
-				color: randomColor()
+				color: nodeColor
 
 			})
 
@@ -80,8 +80,6 @@ const App = () => {
 		let myGraph = new MyGraph()
 		myGraph.create_graph_from_sample(sample)
 		let res = myGraph.find_critical_path()
-		console.log(res, myGraph.critical_path)
-		console.log("shce", myGraph.get_mailing_schedule())
 
 		let criticalPathCheck = new Set()
 		myGraph.critical_path.forEach(node => criticalPathCheck.add(node.name))
@@ -91,7 +89,30 @@ const App = () => {
 			}
 		}
 
+		setErrorMessage(res.message)
+		setFindPathStatus(res.success)
 		setGraph({nodes, edges})
+
+
+		if (res.success) {
+			// get the name dict
+			let taskDict = {}
+			tasks.forEach(item => taskDict[item.id] = item)
+
+			// get the schedule
+			let rawSchedule = myGraph.get_mailing_schedule()
+			let refine = []
+			for (let i = 0; i < schedule.length; i++) {
+				let data = rawSchedule[i]
+				let task = taskDict[data[1]]
+				let startingDate = new Date(startDate.getTime() + data[0] * 1000 * 3600 * 24)
+				let endingDate = new Date(startingDate.getTime() + task.duration * 1000 * 3600 * 24)
+
+				refine.push([i+1, task.name, moment(startingDate).format("DD/MM/YYYY"), moment(endingDate).format("DD/MM/YYYY")])
+			}
+
+			setSchedule(refine)
+		}
 	}
 
 	return (
@@ -145,7 +166,11 @@ const App = () => {
 				</Fab>
 			</Box>
 
-			{graph.nodes.length > 0 ?<Graph graph={graph} options={options} style={{ height: "350px", width: "70%" }} /> : null}
+			<Typography variant="h5" mt={5}>Task Graph</Typography>
+			<Typography fontWeight="bold" color={findPathStatus ? "green" : "red"}>{errorMessage}</Typography>
+			{graph.nodes.length > 0 ?<Graph graph={graph} options={options} style={{ height: "640px", width: "70%" }} /> : null}
+
+			<ScheduleTable schedule={schedule} />
 
 			<br/>
 			<Divider />

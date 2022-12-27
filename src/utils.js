@@ -62,7 +62,7 @@ export class MyGraph {
 		if (!node)
 			return {
 				success: false,
-				message: "No head found"
+				message: "No start activity found"
 			}
 
 		this.critical_path = [node]
@@ -79,7 +79,7 @@ export class MyGraph {
 
 		return {
 			success: true,
-			message: ""
+			message: "Found 1 critical path"
 		}
 	}
 
@@ -244,16 +244,13 @@ export class MyGraph {
 			return null
 		}
 
-		let days = Array.apply(null, Array(this.critical_path[this.critical_path.length-1].earliest_start + 1)).map(function () {})
+		let schedule = []
 		for (const [name, node] of Object.entries(this.node_map)) {
-			let mail_day = node.earliest_start
-			if (days[mail_day]) {
-				days[mail_day].push(node)
-			} else {
-				days[mail_day] = [node]
-			}
+			schedule.push([node.earliest_start, node.name])
 		}
 
-		return days
+		schedule.sort((a, b) => a[0] - b[0])
+
+		return schedule
 	}
 }
