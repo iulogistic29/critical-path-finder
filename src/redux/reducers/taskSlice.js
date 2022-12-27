@@ -26,6 +26,9 @@ const taskSlice = createSlice({
         },
         removeTask: (state, action) =>{
 			let newArr = state.tasks.filter(item => item.id !== action.payload)
+			for (let i = 0; i < newArr.length; i++) {
+				newArr[i].precedents = newArr[i].precedents.filter(x => x !== action.payload)
+			}
 			state.tasks = newArr
         },
         updateTask: (state, action) =>{

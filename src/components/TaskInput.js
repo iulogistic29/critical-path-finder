@@ -16,49 +16,51 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectTasks, removeTask, updateTask } from "../redux/reducers/taskSlice"
 
 const TaskInput = ({ task_id }) => {
-	const [precedents, setPrecedents] = useState([])
-	const [duration, setDuration] = useState(1)
-	const [name, setName] = useState("")
-	const [email, setEmail] = useState("")
 	const [emailError, setEmailError] = useState(false)
 
 	const { tasks } = useSelector(selectTasks)
 	const dispatch = useDispatch()
+	const data = tasks.find(item => item.id === task_id)
 
-	useEffect(() => {
-		const data = tasks.find(item => item.id === task_id)
-		if (data) {
-			setName(data.name)
-			setEmail(data.email)
-			setDuration(data.duration)
-			setPrecedents(data.precedents)
-		}
-	}, [])
-
-
-	useEffect(() => {
-		dispatch(updateTask({
-			id: task_id,
-			data: { name, email, duration, precedents }
-		}))
-	}, [name, email, duration, precedents])
 
 	const handleDuration = (e) => {
 		if (e.target.value == "") {
-			setDuration("")
-		}
-
-		setDuration(parseInt(e.target.value))
-	}
-
-	const handleDurationBlur = () => {
-		if (duration === "") {
-			setDuration(0)
+			dispatch(updateTask({
+				id: task_id,
+				data: {
+					duration: ""
+				}
+			}))
 			return
 		}
 
-		if (duration <= 0) {
-			setDuration(1)
+		dispatch(updateTask({
+			id: task_id,
+			data: {
+				duration: parseInt(e.target.value)
+			}
+		}))
+	}
+
+	const handleDurationBlur = () => {
+		if (!data) return
+		if (data.duration === "") {
+			dispatch(updateTask({
+				id: task_id,
+				data: {
+					duration: 1
+				}
+			}))
+			return
+		}
+
+		if (data.duration <= 0) {
+			dispatch(updateTask({
+				id: task_id,
+				data: {
+					duration: 1
+				}
+			}))
 		}
 	}
 
@@ -70,14 +72,23 @@ const TaskInput = ({ task_id }) => {
 	}
 
 	const handleCheckbox = (e) => {
+		if (!data) return
 		const id = parseInt(e.target.value)
-		if (precedents.find(item => item == id)) {
+		let result = []
+		if (data.precedents.find(item => item == id)) {
 			// remove if exist
-			setPrecedents(precedents.filter(item => item !== id))
+			result = data.precedents.filter(item => item !== id)
 		} else{
 			// add if not exist
-			setPrecedents([...precedents, id])
+			result = [...data.precedents, id]
 		}
+
+		dispatch(updateTask({
+			id: task_id,
+			data: {
+				precedents: result
+			}
+		}))
 	}
 
 	const getPrecedentString = () => {
@@ -85,15 +96,33 @@ const TaskInput = ({ task_id }) => {
 		tasks.forEach(item => nameDict[item.id] = item.name)
 
 		try {
-			let result = nameDict[precedents[0]]
-			for (let i = 1; i < precedents.length; i++) {
-				result += ", " + nameDict[precedents[i]]
+			let result = nameDict[data.precedents[0]]
+			for (let i = 1; i < data.precedents.length; i++) {
+				result += ", " + nameDict[data.precedents[i]]
 			}
 			return result
 		} catch(e) {
 			console.log(e.message)
 		}
 		return ""
+	}
+
+	const handleName = (e) => {
+		dispatch(updateTask({
+			id: task_id,
+			data: {
+				name: e.target.value
+			}
+		}))
+	}
+
+	const handleEmail = (e) => {
+		dispatch(updateTask({
+			id: task_id,
+			data: {
+				email: e.target.value
+			}
+		}))
 	}
 
 	return (
@@ -115,8 +144,8 @@ const TaskInput = ({ task_id }) => {
 				</Typography>
 				<TextField
 					placeholder="Enter task name"
-					value={name}
-					onChange={e => setName(e.target.value)}
+					value={data && data.name}
+					onChange={handleName}
 				/>
 			</Box>
 
@@ -129,13 +158,13 @@ const TaskInput = ({ task_id }) => {
 				>
 					Precendents
 				</Typography>
-				<FormGroup>
+				<FormGroup sx={{ width: 250 }} size="small">
 					<Select
 						value=""
 						displayEmpty
 					>
 						<MenuItem disabled value="">
-							{precedents.length === 0 ? "Choose previous task(s)" : getPrecedentString()}
+							{data && data.precedents.length > 0 ? getPrecedentString() : "Choose previous task(s)"}
 						</MenuItem>
 
 						<Box
@@ -144,7 +173,7 @@ const TaskInput = ({ task_id }) => {
 							padding={2}
 						>
 							{tasks.filter(item => item.id !== task_id).map(item => (
-								<FormControlLabel key={item.id} control={<Checkbox checked={precedents.findIndex(temp => temp === item.id) !== -1} value={item.id} onChange={handleCheckbox} />} label={item.name}/>
+								<FormControlLabel key={item.id} control={<Checkbox checked={data.precedents.findIndex(temp => temp === item.id) !== -1} value={item.id} onChange={handleCheckbox} />} label={item.name}/>
 							))}
 						</Box>
 					</Select>
@@ -163,7 +192,7 @@ const TaskInput = ({ task_id }) => {
 				<TextField
 					placeholder="Number of days"
 					type="number"
-					value={duration}
+					value={data && data.duration}
 					onChange={handleDuration}
 					onBlur={handleDurationBlur}
 				/>
@@ -182,8 +211,8 @@ const TaskInput = ({ task_id }) => {
 					error={emailError}
 					placeholder="Enter your email"
 					type="email"
-					value={email}
-					onChange={e => setEmail(e.target.value)}
+					value={data && data.email}
+					onChange={handleEmail}
 					onBlur={checkEmail}
 				/>
 			</Box>
