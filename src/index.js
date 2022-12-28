@@ -5,16 +5,23 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
 import { store } from './redux/store';
+import { PublicClientApplication } from "@azure/msal-browser";
+import { MsalProvider } from "@azure/msal-react";
+import { msalConfig } from "./authConfig";
 
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
+const msalInstance = new PublicClientApplication(msalConfig);
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
 	<Provider store={store}>
-		<App />
+		<MsalProvider instance={msalInstance}>
+            <App />
+        </MsalProvider>
 	</Provider>
 );
 

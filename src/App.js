@@ -16,6 +16,8 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectTasks, addTask } from "./redux/reducers/taskSlice"
+import { useMsal } from "@azure/msal-react";
+import { loginRequest } from "./authConfig";
 
 import iu_logo from "./images/logo_iu.svg"
 import logistic_logo from "./images/logistic_icon.svg"
@@ -41,6 +43,8 @@ const criticalColor = "#ffee65"
 
 
 const App = () => {
+	const { instance, accounts, inProgress } = useMsal();
+    const [accessToken, setAccessToken] = useState(null);
 	const [startDate, setStartDate] = useState(new Date());
 	const [findPathStatus, setFindPathStatus] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
@@ -102,9 +106,10 @@ const App = () => {
 			// get the schedule
 			let rawSchedule = myGraph.get_mailing_schedule()
 			let refine = []
-			for (let i = 0; i < schedule.length; i++) {
+			for (let i = 0; i < rawSchedule.length; i++) {
 				let data = rawSchedule[i]
 				let task = taskDict[data[1]]
+				console.log(i, task)
 				let startingDate = new Date(startDate.getTime() + data[0] * 1000 * 3600 * 24)
 				let endingDate = new Date(startingDate.getTime() + task.duration * 1000 * 3600 * 24)
 
@@ -112,6 +117,22 @@ const App = () => {
 			}
 
 			setSchedule(refine)
+		}
+	}
+
+	const handleSend = async () => {
+		try{
+			await instance.loginPopup(loginRequest)
+			const request = {
+				...loginRequest,
+				account: accounts[0]
+			};
+
+			// Silently acquires an access token which is then attached to a request for Microsoft Graph data
+			const response = await instance.acquireTokenSilent(request)
+			setAccessToken(response.accessToken);
+		} catch(e) {
+			console.log(e)
 		}
 	}
 
@@ -176,7 +197,7 @@ const App = () => {
 			<Divider />
 			<Box mt={2} mb={15} display="flex" gap={2}>
 				<Button variant="contained" onClick={showGraph}>Calculate</Button>
-				<Button variant="contained" endIcon={<SendIcon />}>
+				<Button variant="contained" endIcon={<SendIcon />} onClick={handleSend}>
 					Send Email
 				</Button>
 			</Box>

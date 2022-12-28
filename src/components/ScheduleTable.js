@@ -13,6 +13,7 @@ import {
 
 
 const ScheduleTable = ({ schedule }) => {
+	console.log(schedule)
 	return (
 		<Box width="100%" maxWidth="700px" mb={3}>
 			<Typography variant="h5" mb={2}>Task Schedule</Typography>
